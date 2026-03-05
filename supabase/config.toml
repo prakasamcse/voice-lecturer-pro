@@ -1,1 +1,7 @@
 project_id = "kmyennmabtncjkvheknn"
+
+[functions.generate-lecture]
+verify_jwt = false
+
+[functions.elevenlabs-tts]
+verify_jwt = false
