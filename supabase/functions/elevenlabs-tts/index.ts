@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { text, targetLanguage = "hi-IN", speaker = "meera" } = await req.json();
+    const { text, targetLanguage = "en-IN", speaker = "anushka" } = await req.json();
     const SARVAM_API_KEY = Deno.env.get("SARVAM_API_KEY");
     if (!SARVAM_API_KEY) throw new Error("SARVAM_API_KEY is not configured");
 
