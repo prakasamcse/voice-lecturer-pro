@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLecturePlayer, type PlayerState } from "@/hooks/useLecturePlayer";
-import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadAsText, downloadAsMarkdown, downloadAsPdf } from "@/lib/downloadLecture";
 
@@ -22,6 +23,7 @@ const stateLabels: Record<PlayerState, string> = {
 const Index = () => {
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("10");
+  const navigate = useNavigate();
   const player = useLecturePlayer();
 
   const canStart = topic.trim().length > 0 && player.state === "idle";
@@ -40,10 +42,14 @@ const Index = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Mic className="h-5 w-5 text-primary-foreground" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-semibold text-foreground">AI Voice Teacher</h1>
             <p className="text-sm text-muted-foreground">Learn any topic through spoken lectures</p>
           </div>
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/chat${topic.trim() ? `?topic=${encodeURIComponent(topic.trim())}` : ""}`)}>
+            <MessageCircle className="h-4 w-4" />
+            Ask Questions
+          </Button>
         </div>
       </header>
 
