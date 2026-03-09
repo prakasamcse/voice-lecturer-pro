@@ -23,6 +23,7 @@ const stateLabels: Record<PlayerState, string> = {
 const Index = () => {
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("10");
+  const navigate = useNavigate();
   const player = useLecturePlayer();
 
   const canStart = topic.trim().length > 0 && player.state === "idle";
