@@ -1,25 +1,38 @@
 
 
-## Plan: Add Download Options for Lecture Content
+# AI Voice Teaching Agent
 
-### What
-Add a download dropdown button in the Transcript card header that lets users download the lecture content in three formats: **Plain Text (.txt)**, **Markdown (.md)**, and **PDF (.pdf)** (generated client-side).
+## Architecture
 
-### Changes
+Two edge functions + a React frontend with a custom playback hook.
 
-**1. `src/pages/Index.tsx`**
-- Import `DropdownMenu` components and `Download` icon from lucide
-- Add a Download dropdown button next to the "Lecture Transcript" heading
-- Only show when `player.sections.length > 0`
-- Three menu items: "Plain Text (.txt)", "Markdown (.md)", "PDF (.pdf)"
+### Edge Function 1: `generate-lecture`
+- Uses **Lovable AI** (google/gemini-3-flash-preview) with tool calling to return structured JSON
+- Input: `{ topic, durationMinutes }`
+- Output: `{ sections: [{ title, content }] }` — content calibrated to ~130 words/minute
+- System prompt instructs the model to generate Introduction, Key Concepts, Examples, Simple Explanation, and Summary sections
 
-**2. `src/lib/downloadLecture.ts`** (new file)
-- `downloadAsText(sections, topic)` — joins sections as plain text with titles, triggers `.txt` download
-- `downloadAsMarkdown(sections, topic)` — formats with `#` headings and section content, triggers `.md` download
-- `downloadAsPdf(sections, topic)` — generates a simple PDF using the browser's `Blob` with basic PDF text commands (no external dependency), or alternatively use `window.print()` styled approach
-- All use `URL.createObjectURL` + programmatic `<a>` click to trigger download
+### Edge Function 2: `elevenlabs-tts`
+- Requires **ElevenLabs connector** (no connection exists yet — will need to set one up)
+- Input: `{ text, voiceId, previousText?, nextText? }`
+- Uses request stitching for natural flow between sections
+- Returns raw MP3 audio bytes
+- Voice: "Brian" (`nPczCjzI2devNBz1zQrb`) — clear teaching voice
 
-### Technical Notes
-- PDF generation will be done without external libraries by creating a print-friendly hidden iframe and using `window.print`, or by generating a minimal PDF binary. The simplest reliable approach: open a new window with formatted HTML and let the user print-to-PDF. Alternatively, we can just offer TXT and MD (skip PDF to avoid complexity).
-- The topic name will be sanitized for the filename.
+### Frontend
+- **`src/pages/Index.tsx`** — Topic input, duration selector (5/10/15/20 min), "Start Session" button, audio player with Play/Pause/Resume/Restart, live transcript panel showing current section
+- **`src/hooks/useLecturePlayer.ts`** — State machine (idle → generating → playing → complete), calls generate-lecture, then iterates sections calling TTS, prefetches next section while current plays, manages Audio API playback
+
+### Config
+- `supabase/config.toml` updated with both functions (`verify_jwt = false`)
+
+## Prerequisites
+- **ElevenLabs connection** must be linked via connector before implementation. I will prompt you to set this up first.
+
+## Files to Create/Modify
+1. `supabase/functions/generate-lecture/index.ts` — new
+2. `supabase/functions/elevenlabs-tts/index.ts` — new
+3. `src/hooks/useLecturePlayer.ts` — new
+4. `src/pages/Index.tsx` — rewrite with teaching agent UI
+5. `supabase/config.toml` — add function configs
 
