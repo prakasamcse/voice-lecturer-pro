@@ -42,10 +42,14 @@ const Index = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Mic className="h-5 w-5 text-primary-foreground" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-semibold text-foreground">AI Voice Teacher</h1>
             <p className="text-sm text-muted-foreground">Learn any topic through spoken lectures</p>
           </div>
+          <Button variant="outline" className="gap-2" onClick={() => navigate(`/chat${topic.trim() ? `?topic=${encodeURIComponent(topic.trim())}` : ""}`)}>
+            <MessageCircle className="h-4 w-4" />
+            Ask Questions
+          </Button>
         </div>
       </header>
 
