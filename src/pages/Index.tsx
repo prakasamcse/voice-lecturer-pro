@@ -33,7 +33,7 @@ const Index = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-accent/30 to-background">
       {/* Header */}
       <header className="border-b border-border bg-card px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
