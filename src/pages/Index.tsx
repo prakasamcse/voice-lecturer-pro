@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLecturePlayer, type PlayerState } from "@/hooks/useLecturePlayer";
-import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2 } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { downloadAsText, downloadAsMarkdown, downloadAsPdf } from "@/lib/downloadLecture";
 
 const stateLabels: Record<PlayerState, string> = {
   idle: "Ready",
@@ -135,9 +137,30 @@ const Index = () => {
         {/* Transcript */}
         {player.sections.length > 0 && (
           <Card className="flex-1 p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Lecture Transcript</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-foreground">Lecture Transcript</h2>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Download
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => downloadAsText(player.sections, topic)}>
+                    Plain Text (.txt)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => downloadAsMarkdown(player.sections, topic)}>
+                    Markdown (.md)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => downloadAsPdf(player.sections, topic)}>
+                    PDF (.pdf)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <ScrollArea className="h-[400px]">
               <div className="flex flex-col gap-6 pr-4">
