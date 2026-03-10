@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Send, Loader2, MessageCircle, Bot, User } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, Bot, User, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { useVoiceInput, useVoiceOutput } from "@/hooks/useVoiceChat";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -22,7 +23,7 @@ async function streamChat({
   messages: Message[];
   topic: string;
   onDelta: (text: string) => void;
-  onDone: () => void;
+  onDone: (fullText: string) => void;
   signal?: AbortSignal;
 }) {
   const resp = await fetch(CHAT_URL, {
@@ -45,6 +46,7 @@ async function streamChat({
   const decoder = new TextDecoder();
   let buffer = "";
   let streamDone = false;
+  let fullText = "";
 
   while (!streamDone) {
     const { done, value } = await reader.read();
@@ -65,7 +67,7 @@ async function streamChat({
       try {
         const parsed = JSON.parse(jsonStr);
         const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
+        if (content) { fullText += content; onDelta(content); }
       } catch {
         buffer = line + "\n" + buffer;
         break;
@@ -84,12 +86,12 @@ async function streamChat({
       try {
         const parsed = JSON.parse(jsonStr);
         const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
+        if (content) { fullText += content; onDelta(content); }
       } catch { /* ignore */ }
     }
   }
 
-  onDone();
+  onDone(fullText);
 }
 
 const Chat = () => {
@@ -100,19 +102,24 @@ const Chat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const { isListening, startListening, stopListening } = useVoiceInput();
+  const { isSpeaking, speak, stopSpeaking } = useVoiceOutput();
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async () => {
-    const text = input.trim();
-    if (!text || isLoading) return;
+  const send = useCallback(async (text?: string) => {
+    const msgText = (text || input).trim();
+    if (!msgText || isLoading) return;
     setInput("");
 
-    const userMsg: Message = { role: "user", content: text };
+    const wasVoice = voiceMode || !!text;
+    const userMsg: Message = { role: "user", content: msgText };
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
@@ -136,7 +143,17 @@ const Chat = () => {
         messages: [...messages, userMsg],
         topic,
         onDelta: upsert,
-        onDone: () => setIsLoading(false),
+        onDone: async (fullText) => {
+          setIsLoading(false);
+          // Auto-speak if triggered by voice
+          if (wasVoice && fullText) {
+            try {
+              await speak(fullText);
+            } catch (e) {
+              console.error("TTS error:", e);
+            }
+          }
+        },
         signal: controller.signal,
       });
     } catch (e: any) {
@@ -145,6 +162,21 @@ const Chat = () => {
         toast.error(e.message || "Failed to get response");
       }
       setIsLoading(false);
+    }
+  }, [input, isLoading, messages, topic, voiceMode, speak]);
+
+  const handleMicClick = () => {
+    if (isListening) {
+      stopListening();
+      return;
+    }
+    try {
+      setVoiceMode(true);
+      startListening((transcript) => {
+        send(transcript);
+      });
+    } catch (e: any) {
+      toast.error(e.message || "Speech recognition failed");
     }
   };
 
@@ -159,10 +191,15 @@ const Chat = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <MessageCircle className="h-5 w-5 text-primary-foreground" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-semibold text-foreground">Ask Questions</h1>
             {topic && <p className="text-sm text-muted-foreground">Topic: {topic}</p>}
           </div>
+          {isSpeaking && (
+            <Button variant="outline" size="icon" onClick={stopSpeaking} title="Stop speaking">
+              <VolumeX className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </header>
 
@@ -175,7 +212,7 @@ const Chat = () => {
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Bot className="mb-4 h-12 w-12 text-muted-foreground/40" />
                   <p className="text-lg font-medium text-muted-foreground">Ask anything{topic ? ` about "${topic}"` : ""}!</p>
-                  <p className="mt-1 text-sm text-muted-foreground/70">Type your question below to get started.</p>
+                  <p className="mt-1 text-sm text-muted-foreground/70">Type or tap the mic to ask by voice.</p>
                 </div>
               )}
               {messages.map((msg, i) => (
@@ -217,6 +254,12 @@ const Chat = () => {
                   </div>
                 </div>
               )}
+              {isSpeaking && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Volume2 className="h-3 w-3 animate-pulse" />
+                  Speaking…
+                </div>
+              )}
               <div ref={scrollRef} />
             </div>
           </ScrollArea>
@@ -224,14 +267,23 @@ const Chat = () => {
           {/* Input */}
           <div className="border-t border-border p-4">
             <div className="flex gap-2">
-              <Input
-                placeholder="Type your question…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+              <Button
+                variant={isListening ? "destructive" : "outline"}
+                size="icon"
+                onClick={handleMicClick}
                 disabled={isLoading}
+                title={isListening ? "Stop listening" : "Speak your question"}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              <Input
+                placeholder={isListening ? "Listening…" : "Type your question…"}
+                value={input}
+                onChange={(e) => { setInput(e.target.value); setVoiceMode(false); }}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+                disabled={isLoading || isListening}
               />
-              <Button onClick={send} disabled={!input.trim() || isLoading} size="icon">
+              <Button onClick={() => send()} disabled={!input.trim() || isLoading} size="icon">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
