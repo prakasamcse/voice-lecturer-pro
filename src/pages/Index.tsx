@@ -102,6 +102,9 @@ const Index = () => {
           </div>
         </Card>
 
+        {/* Document Upload */}
+        <DocumentUpload />
+
         {/* Player Section */}
         {isActive && (
           <Card className="p-6">
