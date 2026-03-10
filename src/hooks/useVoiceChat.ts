@@ -7,7 +7,7 @@ export function useVoiceInput() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const startListening = useCallback((onResult: (text: string) => void) => {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       throw new Error("Speech recognition not supported in this browser");
     }
