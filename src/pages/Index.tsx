@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import VoiceQA from "@/components/VoiceQA";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +47,7 @@ const Index = () => {
             <h1 className="text-lg font-semibold text-foreground">AI Voice Teacher</h1>
             <p className="text-sm text-muted-foreground">Learn any topic through spoken lectures</p>
           </div>
+          <VoiceQA topic={topic.trim()} />
           <Button variant="outline" className="gap-2" onClick={() => navigate(`/chat${topic.trim() ? `?topic=${encodeURIComponent(topic.trim())}` : ""}`)}>
             <MessageCircle className="h-4 w-4" />
             Ask Questions
