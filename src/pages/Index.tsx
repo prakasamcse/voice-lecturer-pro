@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import VoiceQA from "@/components/VoiceQA";
 import DocumentUpload from "@/components/DocumentUpload";
+import SlidePresenter from "@/components/SlidePresenter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,9 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLecturePlayer, type PlayerState } from "@/hooks/useLecturePlayer";
-import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle, Presentation } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadAsText, downloadAsMarkdown, downloadAsPdf } from "@/lib/downloadLecture";
+import { downloadAsPpt } from "@/lib/downloadPpt";
 
 const stateLabels: Record<PlayerState, string> = {
   idle: "Ready",
