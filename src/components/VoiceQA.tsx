@@ -254,7 +254,7 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
           </>
         ) : isListeningPassive ? (
           <>
-            <Mic className="h-4 w-4 text-green-500" />
+            <Mic className="h-4 w-4 text-primary" />
             Say "Hey JD"
           </>
         ) : (
