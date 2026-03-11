@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import VoiceQA from "@/components/VoiceQA";
 import DocumentUpload from "@/components/DocumentUpload";
+import SlidePresenter from "@/components/SlidePresenter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,9 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLecturePlayer, type PlayerState } from "@/hooks/useLecturePlayer";
-import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle, Presentation } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadAsText, downloadAsMarkdown, downloadAsPdf } from "@/lib/downloadLecture";
+import { downloadAsPpt } from "@/lib/downloadPpt";
 
 const stateLabels: Record<PlayerState, string> = {
   idle: "Ready",
@@ -25,6 +27,7 @@ const stateLabels: Record<PlayerState, string> = {
 const Index = () => {
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("10");
+  const [showPresenter, setShowPresenter] = useState(false);
   const navigate = useNavigate();
   const player = useLecturePlayer();
 
@@ -155,25 +158,34 @@ const Index = () => {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-foreground">Lecture Transcript</h2>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => downloadAsText(player.sections, topic)}>
-                    Plain Text (.txt)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => downloadAsMarkdown(player.sections, topic)}>
-                    Markdown (.md)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => downloadAsPdf(player.sections, topic)}>
-                    PDF (.pdf)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowPresenter(true)}>
+                  <Presentation className="h-4 w-4" />
+                  Present
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => downloadAsText(player.sections, topic)}>
+                      Plain Text (.txt)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => downloadAsMarkdown(player.sections, topic)}>
+                      Markdown (.md)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => downloadAsPdf(player.sections, topic)}>
+                      PDF (.pdf)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => downloadAsPpt(player.sections, topic)}>
+                      PowerPoint (.pptx)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             <ScrollArea className="h-[400px]">
               <div className="flex flex-col gap-6 pr-4">
@@ -195,6 +207,14 @@ const Index = () => {
           </Card>
         )}
       </main>
+
+      {showPresenter && player.sections.length > 0 && (
+        <SlidePresenter
+          sections={player.sections}
+          topic={topic}
+          onClose={() => setShowPresenter(false)}
+        />
+      )}
     </div>
   );
 };
