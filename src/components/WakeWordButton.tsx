@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Volume2, Radio, RadioOff } from "lucide-react";
+import { Loader2, Volume2, Radio, CircleOff } from "lucide-react";
 import { toast } from "sonner";
 import { useWakeWord } from "@/hooks/useWakeWord";
 import { useVoiceOutput } from "@/hooks/useVoiceChat";
