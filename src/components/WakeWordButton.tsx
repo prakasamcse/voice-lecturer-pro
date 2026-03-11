@@ -118,7 +118,7 @@ const WakeWordButton = ({ topic }: WakeWordButtonProps) => {
           </>
         ) : isActive ? (
           <>
-            <RadioOff className="h-4 w-4" />
+            <CircleOff className="h-4 w-4" />
             Hey JD Active
           </>
         ) : (
