@@ -40,6 +40,14 @@ export async function downloadAsPpt(sections: Section[], topic: string) {
     slide.background = { fill: "FFFFFF" };
 
     // Section number badge
+    // Section number badge
+    slide.addShape("ellipse" as any, {
+      x: 0.5,
+      y: 0.4,
+      w: 0.6,
+      h: 0.6,
+      fill: { color: "4338CA" },
+    });
     slide.addText(`${i + 1}`, {
       x: 0.5,
       y: 0.4,
@@ -51,8 +59,6 @@ export async function downloadAsPpt(sections: Section[], topic: string) {
       bold: true,
       align: "center",
       valign: "middle",
-      fill: { color: "4338CA" },
-      shape: pptx.shapes.OVAL,
     });
 
     // Title
