@@ -175,6 +175,9 @@ const Index = () => {
                   <DropdownMenuItem onClick={() => downloadAsPdf(player.sections, topic)}>
                     PDF (.pdf)
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => downloadAsPpt(player.sections, topic)}>
+                    PowerPoint (.pptx)
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
