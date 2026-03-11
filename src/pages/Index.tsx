@@ -207,6 +207,14 @@ const Index = () => {
           </Card>
         )}
       </main>
+
+      {showPresenter && player.sections.length > 0 && (
+        <SlidePresenter
+          sections={player.sections}
+          topic={topic}
+          onClose={() => setShowPresenter(false)}
+        />
+      )}
     </div>
   );
 };
