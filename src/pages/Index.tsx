@@ -158,28 +158,34 @@ const Index = () => {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
                 <h2 className="text-sm font-semibold text-foreground">Lecture Transcript</h2>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Download
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => downloadAsText(player.sections, topic)}>
-                    Plain Text (.txt)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => downloadAsMarkdown(player.sections, topic)}>
-                    Markdown (.md)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => downloadAsPdf(player.sections, topic)}>
-                    PDF (.pdf)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => downloadAsPpt(player.sections, topic)}>
-                    PowerPoint (.pptx)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowPresenter(true)}>
+                  <Presentation className="h-4 w-4" />
+                  Present
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => downloadAsText(player.sections, topic)}>
+                      Plain Text (.txt)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => downloadAsMarkdown(player.sections, topic)}>
+                      Markdown (.md)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => downloadAsPdf(player.sections, topic)}>
+                      PDF (.pdf)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => downloadAsPpt(player.sections, topic)}>
+                      PowerPoint (.pptx)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
             <ScrollArea className="h-[400px]">
               <div className="flex flex-col gap-6 pr-4">
