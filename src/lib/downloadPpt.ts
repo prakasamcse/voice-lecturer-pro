@@ -75,7 +75,7 @@ export async function downloadAsPpt(sections: Section[], topic: string) {
     });
 
     // Divider line
-    slide.addShape(pptx.shapes.RECTANGLE, {
+    slide.addShape("rect" as any, {
       x: 0.5,
       y: 1.3,
       w: 12.3,
