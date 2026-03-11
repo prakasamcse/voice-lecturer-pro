@@ -27,6 +27,7 @@ const stateLabels: Record<PlayerState, string> = {
 const Index = () => {
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("10");
+  const [showPresenter, setShowPresenter] = useState(false);
   const navigate = useNavigate();
   const player = useLecturePlayer();
 
