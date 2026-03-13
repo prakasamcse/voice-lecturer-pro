@@ -116,7 +116,7 @@ const Index = () => {
         </Card>
 
         {/* Document Upload */}
-        <DocumentUpload />
+        <DocumentUpload onPptSessionStart={handlePptSession} />
 
         {/* Player Section */}
         {isActive && (
