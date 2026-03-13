@@ -40,6 +40,14 @@ const Index = () => {
     if (canStart) player.startSession(topic.trim(), parseInt(duration));
   };
 
+  const handlePptSession = (sections: LectureSection[], title: string) => {
+    if (!["idle", "complete"].includes(player.state)) {
+      player.stop();
+    }
+    setTopic(title);
+    player.startFromSections(sections);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-accent/30 to-background">
       {/* Header */}
