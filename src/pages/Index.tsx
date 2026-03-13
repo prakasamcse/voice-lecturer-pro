@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLecturePlayer, type PlayerState } from "@/hooks/useLecturePlayer";
 import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle, Presentation } from "lucide-react";
+import type { LectureSection } from "@/hooks/useLecturePlayer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadAsText, downloadAsMarkdown, downloadAsPdf } from "@/lib/downloadLecture";
 import { downloadAsPpt } from "@/lib/downloadPpt";
@@ -37,6 +38,14 @@ const Index = () => {
 
   const handleStart = () => {
     if (canStart) player.startSession(topic.trim(), parseInt(duration));
+  };
+
+  const handlePptSession = (sections: LectureSection[], title: string) => {
+    if (!["idle", "complete"].includes(player.state)) {
+      player.stop();
+    }
+    setTopic(title);
+    player.startFromSections(sections);
   };
 
   return (
@@ -107,7 +116,7 @@ const Index = () => {
         </Card>
 
         {/* Document Upload */}
-        <DocumentUpload />
+        <DocumentUpload onPptSessionStart={handlePptSession} />
 
         {/* Player Section */}
         {isActive && (

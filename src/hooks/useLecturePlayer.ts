@@ -216,12 +216,74 @@ export function useLecturePlayer() {
     setProgress(0);
   }, [cleanup]);
 
+  const startFromSections = useCallback(async (preSections: LectureSection[]) => {
+    cleanup();
+    abortRef.current = false;
+    setState("converting");
+    setSections(preSections);
+    setCurrentSectionIndex(0);
+    setProgress(0);
+
+    try {
+      // Convert first section to speech
+      const firstUrl = await fetchTTS(
+        preSections[0].content,
+        undefined,
+        preSections[1]?.content?.slice(0, 200)
+      );
+      audioBlobsRef.current.set(0, firstUrl);
+
+      if (abortRef.current) return;
+
+      setState("playing");
+
+      for (let i = 0; i < preSections.length; i++) {
+        if (abortRef.current) return;
+        setCurrentSectionIndex(i);
+
+        // Prefetch next
+        if (i + 1 < preSections.length && !audioBlobsRef.current.has(i + 1)) {
+          fetchTTS(
+            preSections[i + 1].content,
+            preSections[i].content.slice(-200),
+            preSections[i + 2]?.content?.slice(0, 200)
+          ).then((url) => audioBlobsRef.current.set(i + 1, url))
+            .catch((e) => console.error("Prefetch error:", e));
+        }
+
+        if (!audioBlobsRef.current.has(i)) {
+          setState("converting");
+          const url = await fetchTTS(
+            preSections[i].content,
+            preSections[i - 1]?.content?.slice(-200),
+            preSections[i + 1]?.content?.slice(0, 200)
+          );
+          audioBlobsRef.current.set(i, url);
+          if (abortRef.current) return;
+          setState("playing");
+        }
+
+        await playSection(i, preSections);
+      }
+
+      setProgress(100);
+      setState("complete");
+    } catch (e) {
+      if (!abortRef.current) {
+        console.error("PPT session error:", e);
+        toast.error(e instanceof Error ? e.message : "An error occurred");
+        setState("idle");
+      }
+    }
+  }, [cleanup, fetchTTS, playSection]);
+
   return {
     state,
     sections,
     currentSectionIndex,
     progress,
     startSession,
+    startFromSections,
     pause,
     resume,
     restart,
