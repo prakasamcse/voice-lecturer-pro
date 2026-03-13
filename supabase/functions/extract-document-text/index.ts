@@ -16,14 +16,19 @@ serve(async (req) => {
     const fileName = file.name.toLowerCase();
     let text = "";
 
+    let sections: { title: string; content: string }[] | null = null;
+
     if (fileName.endsWith(".txt") || fileName.endsWith(".md") || fileName.endsWith(".csv")) {
       text = await file.text();
     } else if (fileName.endsWith(".pdf")) {
       text = await extractPdfText(file);
     } else if (fileName.endsWith(".docx")) {
       text = await extractDocxText(file);
+    } else if (fileName.endsWith(".pptx") || fileName.endsWith(".ppt")) {
+      const result = await extractPptText(file);
+      text = result.text;
+      sections = result.sections;
     } else {
-      // Try as plain text
       text = await file.text();
     }
 
