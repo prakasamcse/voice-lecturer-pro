@@ -151,3 +151,71 @@ async function extractDocxText(file: File): Promise<string> {
   const data = await response.json();
   return data.choices?.[0]?.message?.content || "";
 }
+
+async function extractPptText(file: File): Promise<{ text: string; sections: { title: string; content: string }[] }> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let base64 = "";
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.slice(i, i + chunkSize);
+    base64 += btoa(String.fromCharCode(...chunk));
+  }
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              file: {
+                filename: file.name,
+                file_data: `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${base64}`,
+              },
+            },
+            {
+              type: "text",
+              text: `Extract ALL content from this PowerPoint presentation slide by slide. Return a JSON array where each element represents a slide with this structure: {"title": "slide title or Slide N", "content": "all text content from that slide as a readable paragraph"}. Return ONLY the JSON array, no markdown, no code fences, no commentary.`,
+            },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("PPT extraction error:", response.status, errText);
+    throw new Error("Failed to extract text from PowerPoint");
+  }
+
+  const data = await response.json();
+  const rawContent = data.choices?.[0]?.message?.content || "[]";
+  
+  // Clean and parse the JSON
+  let cleaned = rawContent.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  }
+  
+  let sections: { title: string; content: string }[];
+  try {
+    sections = JSON.parse(cleaned);
+  } catch {
+    // Fallback: treat as plain text
+    sections = [{ title: "Presentation", content: cleaned }];
+  }
+
+  const text = sections.map((s, i) => `Slide ${i + 1}: ${s.title}\n${s.content}`).join("\n\n");
+  return { text, sections };
+}
