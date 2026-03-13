@@ -175,12 +175,6 @@ async function extractPptText(file: File): Promise<{ text: string; sections: { t
       base64 += btoa(binary);
     }
   }
-
-  // For very large files, fall back to a simpler approach
-  if (bytes.length > 5 * 1024 * 1024) {
-    throw new Error("PowerPoint file too large. Please use files under 5MB.");
-  }
-
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
