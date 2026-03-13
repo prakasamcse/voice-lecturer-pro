@@ -225,23 +225,19 @@ export function useLecturePlayer() {
     setProgress(0);
 
     try {
-      // Convert first section to speech
       const firstUrl = await fetchTTS(
         preSections[0].content,
         undefined,
         preSections[1]?.content?.slice(0, 200)
       );
       audioBlobsRef.current.set(0, firstUrl);
-
       if (abortRef.current) return;
-
       setState("playing");
 
       for (let i = 0; i < preSections.length; i++) {
         if (abortRef.current) return;
         setCurrentSectionIndex(i);
 
-        // Prefetch next
         if (i + 1 < preSections.length && !audioBlobsRef.current.has(i + 1)) {
           fetchTTS(
             preSections[i + 1].content,
