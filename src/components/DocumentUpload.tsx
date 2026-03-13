@@ -133,7 +133,7 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
             <Upload className="h-8 w-8 text-muted-foreground/50" />
             <div className="text-center">
               <p className="text-sm font-medium text-foreground">Drop a document or click to upload</p>
-              <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, PPTX, TXT, MD — up to 10MB</p>
+              <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, PPTX, TXT, MD — up to 20MB</p>
             </div>
             <input
               ref={fileInputRef}
