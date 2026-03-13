@@ -9,7 +9,7 @@ import type { LectureSection } from "@/hooks/useLecturePlayer";
 
 const EXTRACT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document-text`;
 const ACCEPTED_TYPES = ".pdf,.docx,.txt,.md,.csv,.pptx,.ppt";
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 interface DocumentUploadProps {
   onPptSessionStart?: (sections: LectureSection[], title: string) => void;
