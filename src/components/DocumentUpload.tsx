@@ -27,7 +27,7 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (file.size > MAX_FILE_SIZE) {
-      toast.error("File too large. Maximum size is 10MB.");
+      toast.error("File too large. Maximum size is 20MB.");
       return;
     }
 
