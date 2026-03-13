@@ -2,20 +2,28 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Upload, FileText, Loader2, Volume2, VolumeX, X } from "lucide-react";
+import { Upload, FileText, Loader2, Volume2, VolumeX, X, Presentation } from "lucide-react";
 import { toast } from "sonner";
 import { useVoiceOutput } from "@/hooks/useVoiceChat";
+import type { LectureSection } from "@/hooks/useLecturePlayer";
 
 const EXTRACT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document-text`;
-const ACCEPTED_TYPES = ".pdf,.docx,.txt,.md,.csv";
+const ACCEPTED_TYPES = ".pdf,.docx,.txt,.md,.csv,.pptx,.ppt";
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const DocumentUpload = () => {
+interface DocumentUploadProps {
+  onPptSessionStart?: (sections: LectureSection[], title: string) => void;
+}
+
+const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
   const [extractedText, setExtractedText] = useState("");
+  const [pptSections, setPptSections] = useState<LectureSection[] | null>(null);
   const [fileName, setFileName] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isSpeaking, speak, stopSpeaking } = useVoiceOutput();
+
+  const isPpt = fileName.toLowerCase().endsWith(".pptx") || fileName.toLowerCase().endsWith(".ppt");
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (file.size > MAX_FILE_SIZE) {
@@ -26,6 +34,7 @@ const DocumentUpload = () => {
     setIsExtracting(true);
     setFileName(file.name);
     setExtractedText("");
+    setPptSections(null);
 
     try {
       const formData = new FormData();
@@ -44,9 +53,12 @@ const DocumentUpload = () => {
         throw new Error(err.error || `Error ${resp.status}`);
       }
 
-      const { text } = await resp.json();
-      setExtractedText(text);
-      toast.success("Text extracted! Click play to listen.");
+      const data = await resp.json();
+      setExtractedText(data.text);
+      if (data.sections) {
+        setPptSections(data.sections);
+      }
+      toast.success(data.sections ? "Slides extracted! Start a voice session." : "Text extracted! Click play to listen.");
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || "Failed to extract text");
@@ -82,9 +94,17 @@ const DocumentUpload = () => {
     }
   };
 
+  const handleStartPptSession = () => {
+    if (pptSections && onPptSessionStart) {
+      const title = fileName.replace(/\.(pptx?|ppt)$/i, "");
+      onPptSessionStart(pptSections, title);
+    }
+  };
+
   const handleClear = () => {
     stopSpeaking();
     setExtractedText("");
+    setPptSections(null);
     setFileName("");
   };
 
@@ -113,7 +133,7 @@ const DocumentUpload = () => {
             <Upload className="h-8 w-8 text-muted-foreground/50" />
             <div className="text-center">
               <p className="text-sm font-medium text-foreground">Drop a document or click to upload</p>
-              <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, TXT, MD — up to 10MB</p>
+              <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, PPTX, TXT, MD — up to 10MB</p>
             </div>
             <input
               ref={fileInputRef}
@@ -126,7 +146,7 @@ const DocumentUpload = () => {
         ) : (
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
+              {isPpt ? <Presentation className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-primary" />}
               <span className="text-sm font-medium text-foreground truncate">{fileName}</span>
               {isExtracting && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             </div>
@@ -140,7 +160,13 @@ const DocumentUpload = () => {
                 </ScrollArea>
 
                 <div className="flex items-center gap-2">
-                  <Button onClick={handlePlayStop} className="gap-2">
+                  {isPpt && pptSections && onPptSessionStart ? (
+                    <Button onClick={handleStartPptSession} className="gap-2">
+                      <Presentation className="h-4 w-4" />
+                      Start Voice Session ({pptSections.length} slides)
+                    </Button>
+                  ) : null}
+                  <Button onClick={handlePlayStop} variant={isPpt ? "outline" : "default"} className="gap-2">
                     {isSpeaking ? (
                       <>
                         <VolumeX className="h-4 w-4" />
