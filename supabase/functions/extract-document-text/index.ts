@@ -35,7 +35,7 @@ serve(async (req) => {
     text = text.trim();
     if (!text) throw new Error("No text content found in the document");
 
-    return new Response(JSON.stringify({ text, charCount: text.length }), {
+    return new Response(JSON.stringify({ text, charCount: text.length, ...(sections ? { sections } : {}) }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
