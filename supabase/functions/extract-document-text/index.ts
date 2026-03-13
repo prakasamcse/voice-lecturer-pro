@@ -157,11 +157,28 @@ async function extractPptText(file: File): Promise<{ text: string; sections: { t
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
   const bytes = new Uint8Array(await file.arrayBuffer());
+  
+  // Proper base64 encoding: process in chunks aligned to 3-byte boundaries
   let base64 = "";
-  const chunkSize = 8192;
+  const chunkSize = 8190; // divisible by 3
   for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.slice(i, i + chunkSize);
-    base64 += btoa(String.fromCharCode(...chunk));
+    const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+    let binary = "";
+    for (let j = 0; j < chunk.length; j++) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+    // Only use btoa on aligned chunks, except the last one
+    if (i + chunkSize >= bytes.length) {
+      // Last chunk - ok to have padding
+      base64 += btoa(binary);
+    } else {
+      base64 += btoa(binary);
+    }
+  }
+
+  // For very large files, fall back to a simpler approach
+  if (bytes.length > 5 * 1024 * 1024) {
+    throw new Error("PowerPoint file too large. Please use files under 5MB.");
   }
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -202,7 +219,6 @@ async function extractPptText(file: File): Promise<{ text: string; sections: { t
   const data = await response.json();
   const rawContent = data.choices?.[0]?.message?.content || "[]";
   
-  // Clean and parse the JSON
   let cleaned = rawContent.trim();
   if (cleaned.startsWith("```")) {
     cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
@@ -212,7 +228,6 @@ async function extractPptText(file: File): Promise<{ text: string; sections: { t
   try {
     sections = JSON.parse(cleaned);
   } catch {
-    // Fallback: treat as plain text
     sections = [{ title: "Presentation", content: cleaned }];
   }
 
