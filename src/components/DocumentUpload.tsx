@@ -257,7 +257,7 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
                     )}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    {extractedText.length.toLocaleString()} characters
+                    {speakProgress || `${extractedText.length.toLocaleString()} characters`}
                   </span>
                 </div>
               </>
