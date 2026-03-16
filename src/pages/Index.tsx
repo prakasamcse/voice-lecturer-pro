@@ -62,10 +62,6 @@ const Index = () => {
           </div>
           
           <VoiceQA topic={topic.trim()} />
-          <Button variant="outline" className="gap-2" onClick={() => navigate(`/chat${topic.trim() ? `?topic=${encodeURIComponent(topic.trim())}` : ""}`)}>
-            <MessageCircle className="h-4 w-4" />
-            Ask Questions
-          </Button>
         </div>
       </header>
 

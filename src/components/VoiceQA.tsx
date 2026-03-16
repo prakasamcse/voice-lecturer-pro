@@ -174,6 +174,18 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
             return;
           }
         }
+
+        // Direct speech mode: any final result with enough words is a question
+        if (result.isFinal) {
+          const transcript = result[0].transcript?.trim();
+          if (transcript && transcript.split(/\s+/).length >= 2) {
+            setWakeDetected(true);
+            processingRef.current = true;
+            recognition.stop();
+            askAndAnswer(transcript);
+            return;
+          }
+        }
       }
     };
 
