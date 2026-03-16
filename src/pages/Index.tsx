@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLecturePlayer, type PlayerState } from "@/hooks/useLecturePlayer";
-import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, MessageCircle, Presentation } from "lucide-react";
+import { Play, Pause, RotateCcw, Square, BookOpen, Mic, Loader2, Download, Presentation } from "lucide-react";
 import type { LectureSection } from "@/hooks/useLecturePlayer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadAsText, downloadAsMarkdown, downloadAsPdf } from "@/lib/downloadLecture";
