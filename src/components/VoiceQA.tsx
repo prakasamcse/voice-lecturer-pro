@@ -168,6 +168,13 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        
+        // Log all transcripts for debugging
+        for (let j = 0; j < result.length; j++) {
+          console.log(`[VoiceQA] Alt${j} (final=${result.isFinal}): "${result[j].transcript}"`);
+        }
+        
+        // Check all alternatives for wake word
         for (let j = 0; j < result.length; j++) {
           const transcript = result[j].transcript;
           const { found, question } = extractAfterWakeWord(transcript);
@@ -178,11 +185,18 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
             recognition.stop();
 
             if (question.length > 2) {
+              console.log(`[VoiceQA] Asking: "${question}"`);
               askAndAnswer(question);
             } else {
+              console.log(`[VoiceQA] Wake word only, listening for follow-up...`);
               setTimeout(() => listenForQuestion(), 300);
             }
             return;
+          }
+          
+          // Also check interim results for wake word to prepare
+          if (found && !result.isFinal) {
+            setWakeDetected(true);
           }
         }
 
@@ -190,6 +204,7 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
         if (result.isFinal) {
           const transcript = result[0].transcript?.trim();
           if (transcript && transcript.split(/\s+/).length >= 2) {
+            console.log(`[VoiceQA] Direct question: "${transcript}"`);
             setWakeDetected(true);
             processingRef.current = true;
             recognition.stop();
