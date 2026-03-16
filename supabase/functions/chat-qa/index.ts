@@ -14,8 +14,8 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = topic
-      ? `You are an expert teacher specializing in "${topic}". Answer the student's questions clearly and concisely. Use examples when helpful. If a question is unrelated to the topic, gently guide them back. Keep answers focused and educational.`
-      : `You are a helpful AI teaching assistant. Answer questions clearly and concisely with examples when helpful.`;
+      ? `You are an expert teacher specializing in "${topic}". Be extremely concise — use as few words as possible while staying accurate. Give short, direct answers. Only use examples if essential. Keep responses under 3 sentences unless complexity demands more.`
+      : `You are a helpful AI teaching assistant. Be extremely concise — use as few words as possible while staying accurate. Short, direct answers only.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

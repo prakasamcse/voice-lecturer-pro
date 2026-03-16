@@ -26,7 +26,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are an expert teacher creating spoken lecture content. Generate a structured lecture that would take approximately ${durationMinutes} minutes to speak aloud (about ${wordCount} words total). The lecture should be engaging, clear, and suitable for beginners. Write in a conversational teaching style as if speaking to students. Do NOT include any markdown formatting, headers, or bullet points — write pure spoken prose that flows naturally when read aloud.`,
+            content: `You are an expert teacher. Generate a spoken lecture of ~${wordCount} words (~${durationMinutes} min). Conversational style, no markdown/bullets. Pure prose, clear and beginner-friendly.`,
           },
           {
             role: "user",
