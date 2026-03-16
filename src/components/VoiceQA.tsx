@@ -6,14 +6,25 @@ import { useVoiceOutput } from "@/hooks/useVoiceChat";
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-qa`;
 
-const WAKE_PHRASES = ["hey jd", "hey j d", "hey jady", "hey jay dee", "a jd", "hey gd"];
+const WAKE_PHRASES = [
+  "hey jd", "hey j d", "hey jady", "hey jay dee", "a jd", "hey gd",
+  "hey jedi", "hey judy", "hey jody", "hey jt", "hey j.d", "hey gidi",
+  "hey jb", "hey jaydi", "hey jidi", "hey jade", "hey jd.", "hey, jd",
+  "hei jd", "hey dj", "hey jee dee", "hey ji di", "hey g d",
+  "hey jede", "hey jidi", "hey jaydy", "hey jady",
+];
 
 function extractAfterWakeWord(text: string): { found: boolean; question: string } {
-  const lower = text.toLowerCase().trim();
+  const lower = text.toLowerCase().trim()
+    .replace(/[.,!?]/g, "")
+    .replace(/\s+/g, " ");
+  
   for (const phrase of WAKE_PHRASES) {
     const idx = lower.indexOf(phrase);
     if (idx !== -1) {
-      return { found: true, question: text.slice(idx + phrase.length).trim() };
+      const afterWake = text.slice(idx + phrase.length).trim();
+      console.log(`[VoiceQA] Wake word "${phrase}" detected! Question: "${afterWake}"`);
+      return { found: true, question: afterWake };
     }
   }
   return { found: false, question: "" };
@@ -157,6 +168,13 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
     recognition.onresult = (event: any) => {
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        
+        // Log all transcripts for debugging
+        for (let j = 0; j < result.length; j++) {
+          console.log(`[VoiceQA] Alt${j} (final=${result.isFinal}): "${result[j].transcript}"`);
+        }
+        
+        // Check all alternatives for wake word
         for (let j = 0; j < result.length; j++) {
           const transcript = result[j].transcript;
           const { found, question } = extractAfterWakeWord(transcript);
@@ -167,11 +185,18 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
             recognition.stop();
 
             if (question.length > 2) {
+              console.log(`[VoiceQA] Asking: "${question}"`);
               askAndAnswer(question);
             } else {
+              console.log(`[VoiceQA] Wake word only, listening for follow-up...`);
               setTimeout(() => listenForQuestion(), 300);
             }
             return;
+          }
+          
+          // Also check interim results for wake word to prepare
+          if (found && !result.isFinal) {
+            setWakeDetected(true);
           }
         }
 
@@ -179,6 +204,7 @@ const VoiceQA = ({ topic }: VoiceQAProps) => {
         if (result.isFinal) {
           const transcript = result[0].transcript?.trim();
           if (transcript && transcript.split(/\s+/).length >= 2) {
+            console.log(`[VoiceQA] Direct question: "${transcript}"`);
             setWakeDetected(true);
             processingRef.current = true;
             recognition.stop();
