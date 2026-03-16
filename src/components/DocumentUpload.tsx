@@ -161,10 +161,28 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
   };
 
   const handleClear = () => {
-    stopSpeaking();
+    abortRef.current = true;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsSpeaking(false);
+    setSpeakProgress("");
     setExtractedText("");
     setPptSections(null);
     setFileName("");
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }, [handleFileSelect]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+    e.target.value = "";
   };
 
   return (
