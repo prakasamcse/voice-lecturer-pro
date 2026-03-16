@@ -53,7 +53,17 @@ async function extractPdfText(file: File): Promise<string> {
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  const base64 = btoa(String.fromCharCode(...bytes));
+  // Chunk base64 encoding to avoid stack overflow on large files
+  let base64 = "";
+  const chunkSize = 8190; // divisible by 3 for proper base64 alignment
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.slice(i, Math.min(i + chunkSize, bytes.length));
+    let binary = "";
+    for (let j = 0; j < chunk.length; j++) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+    base64 += btoa(binary);
+  }
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",

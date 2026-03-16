@@ -4,12 +4,31 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Upload, FileText, Loader2, Volume2, VolumeX, X, Presentation } from "lucide-react";
 import { toast } from "sonner";
-import { useVoiceOutput } from "@/hooks/useVoiceChat";
 import type { LectureSection } from "@/hooks/useLecturePlayer";
 
 const EXTRACT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-document-text`;
+const TTS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`;
 const ACCEPTED_TYPES = ".pdf,.docx,.txt,.md,.csv,.pptx,.ppt";
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const TTS_CHUNK_SIZE = 1500; // characters per TTS chunk to avoid timeout
+
+function splitTextIntoChunks(text: string, maxLen: number): string[] {
+  const chunks: string[] = [];
+  let remaining = text;
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLen) {
+      chunks.push(remaining);
+      break;
+    }
+    let splitAt = remaining.lastIndexOf('. ', maxLen - 1);
+    if (splitAt === -1) splitAt = remaining.lastIndexOf(' ', maxLen - 1);
+    if (splitAt === -1) splitAt = maxLen;
+    else splitAt += 1;
+    chunks.push(remaining.slice(0, splitAt).trim());
+    remaining = remaining.slice(splitAt).trim();
+  }
+  return chunks.filter(c => c.length > 0);
+}
 
 interface DocumentUploadProps {
   onPptSessionStart?: (sections: LectureSection[], title: string) => void;
@@ -20,8 +39,11 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
   const [pptSections, setPptSections] = useState<LectureSection[] | null>(null);
   const [fileName, setFileName] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakProgress, setSpeakProgress] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isSpeaking, speak, stopSpeaking } = useVoiceOutput();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const abortRef = useRef(false);
 
   const isPpt = fileName.toLowerCase().endsWith(".pptx") || fileName.toLowerCase().endsWith(".ppt");
 
@@ -68,29 +90,66 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
     }
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
-    e.target.value = "";
-  };
-
   const handlePlayStop = async () => {
     if (isSpeaking) {
-      stopSpeaking();
+      abortRef.current = true;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setIsSpeaking(false);
+      setSpeakProgress("");
       return;
     }
     if (!extractedText) return;
 
+    abortRef.current = false;
+    setIsSpeaking(true);
+
     try {
-      await speak(extractedText);
+      const cleanText = extractedText
+        .replace(/[#*_~`>\[\]()!]/g, "")
+        .replace(/\n{2,}/g, ". ")
+        .replace(/\n/g, " ")
+        .trim();
+
+      const chunks = splitTextIntoChunks(cleanText, TTS_CHUNK_SIZE);
+
+      for (let i = 0; i < chunks.length; i++) {
+        if (abortRef.current) break;
+        setSpeakProgress(`Playing ${i + 1}/${chunks.length}`);
+
+        const resp = await fetch(TTS_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: chunks[i], targetLanguage: "en-IN", speaker: "anushka" }),
+        });
+
+        if (!resp.ok) throw new Error("TTS failed");
+        if (abortRef.current) break;
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+
+        await new Promise<void>((resolve, reject) => {
+          audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+          audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Audio playback failed")); };
+          audio.play().catch(reject);
+        });
+      }
     } catch (e: any) {
-      toast.error(e.message || "TTS failed");
+      if (!abortRef.current) {
+        toast.error(e.message || "TTS failed");
+      }
+    } finally {
+      setIsSpeaking(false);
+      setSpeakProgress("");
+      audioRef.current = null;
     }
   };
 
@@ -102,10 +161,28 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
   };
 
   const handleClear = () => {
-    stopSpeaking();
+    abortRef.current = true;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsSpeaking(false);
+    setSpeakProgress("");
     setExtractedText("");
     setPptSections(null);
     setFileName("");
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }, [handleFileSelect]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+    e.target.value = "";
   };
 
   return (
@@ -180,7 +257,7 @@ const DocumentUpload = ({ onPptSessionStart }: DocumentUploadProps) => {
                     )}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    {extractedText.length.toLocaleString()} characters
+                    {speakProgress || `${extractedText.length.toLocaleString()} characters`}
                   </span>
                 </div>
               </>
